@@ -132,6 +132,8 @@ export function Deck() {
 
       <BottomHUD index={index} total={slides.length} />
 
+      <MobileTapNav onPrev={retreat} onNext={advance} />
+
       <AnimatePresence>
         {gridOpen && (
           <GridOverview
@@ -145,6 +147,35 @@ export function Deck() {
           />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ============================================================
+   MOBILE TAP NAV - left half = prev, right half = next
+   ============================================================ */
+
+function MobileTapNav({
+  onPrev,
+  onNext,
+}: {
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-30 flex md:hidden pointer-events-none">
+      <button
+        type="button"
+        onClick={onPrev}
+        aria-label="Previous slide"
+        className="flex-1 pointer-events-auto active:bg-white/5 transition-colors"
+      />
+      <button
+        type="button"
+        onClick={onNext}
+        aria-label="Next slide"
+        className="flex-1 pointer-events-auto active:bg-white/5 transition-colors"
+      />
     </div>
   );
 }
