@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kn-bg: oklch(0.10 0.02 265);
+  --color-kn-fg: oklch(0.97 0.01 250);
+  --color-kn-muted: oklch(0.62 0.02 260);
+  --color-kn-cyan: oklch(0.85 0.15 200);
+  --color-kn-violet: oklch(0.70 0.20 290);
+  --color-kn-magenta: oklch(0.70 0.25 340);
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --kn-bg: oklch(0.10 0.02 265);
+  --kn-fg: oklch(0.97 0.01 250);
+  --kn-muted: oklch(0.62 0.02 260);
+  --kn-cyan: oklch(0.85 0.15 200);
+  --kn-violet: oklch(0.70 0.20 290);
+  --kn-magenta: oklch(0.70 0.25 340);
+  --kn-glass: oklch(0.20 0.02 265 / 0.45);
+  --kn-border: oklch(0.65 0.05 260 / 0.18);
+
+  --kn-grad-aurora: linear-gradient(
+    120deg,
+    oklch(0.85 0.15 200) 0%,
+    oklch(0.70 0.20 290) 50%,
+    oklch(0.70 0.25 340) 100%
+  );
+  --kn-grad-soft: radial-gradient(
+    1200px 700px at 20% 10%,
+    oklch(0.30 0.10 290 / 0.45),
+    transparent 60%
+  ),
+  radial-gradient(
+    900px 600px at 85% 80%,
+    oklch(0.30 0.12 200 / 0.40),
+    transparent 65%
+  );
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--kn-bg);
+  color: var(--kn-fg);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ============= KEYNOTE UTILITIES ============= */
+
+.kn-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background:
+    var(--kn-grad-soft),
+    var(--kn-bg);
+  color: var(--kn-fg);
+  font-family: var(--font-display);
+  overflow: hidden;
+}
+
+.kn-stage {
+  position: fixed;
+  width: 1920px;
+  height: 1080px;
+  left: 50%;
+  top: 50%;
+  margin-left: -960px;
+  margin-top: -540px;
+  transform-origin: center center;
+  background:
+    var(--kn-grad-soft),
+    var(--kn-bg);
+  overflow: hidden;
+  will-change: transform;
+}
+
+.kn-glass {
+  background: var(--kn-glass);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--kn-border);
+  border-radius: 24px;
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.06) inset,
+    0 30px 80px -30px oklch(0 0 0 / 0.6),
+    0 0 0 1px oklch(1 0 0 / 0.02);
+  position: relative;
+}
+
+.kn-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    oklch(1 0 0 / 0.06) 0%,
+    transparent 30%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.kn-grid-bg {
+  background-image:
+    radial-gradient(circle at center, oklch(0.65 0.05 260 / 0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0;
+}
+
+.kn-glow-cyan {
+  box-shadow:
+    0 0 60px -10px oklch(0.85 0.15 200 / 0.5),
+    0 0 120px -20px oklch(0.85 0.15 200 / 0.3);
+}
+
+.kn-glow-violet {
+  box-shadow:
+    0 0 60px -10px oklch(0.70 0.20 290 / 0.5),
+    0 0 120px -20px oklch(0.70 0.20 290 / 0.3);
+}
+
+.kn-glow-magenta {
+  box-shadow:
+    0 0 60px -10px oklch(0.70 0.25 340 / 0.5),
+    0 0 120px -20px oklch(0.70 0.25 340 / 0.3);
+}
+
+.kn-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+}
+
+.kn-mono {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 500;
+}
+
+.kn-kicker {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.32em;
+  color: var(--kn-cyan);
+  font-weight: 600;
+}
+
+.kn-scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+.kn-scroll-hide {
+  scrollbar-width: none;
+}
+
+.kn-text-grad {
+  background: var(--kn-grad-aurora);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.kn-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--kn-border) 20%,
+    var(--kn-border) 80%,
+    transparent
+  );
+}
+
+.kn-aurora-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      600px 400px at 15% 25%,
+      oklch(0.70 0.20 290 / 0.35),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 500px at 85% 75%,
+      oklch(0.85 0.15 200 / 0.30),
+      transparent 65%
+    ),
+    radial-gradient(
+      500px 400px at 50% 50%,
+      oklch(0.70 0.25 340 / 0.18),
+      transparent 60%
+    );
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* code block tokens */
+.tok-kw { color: var(--kn-cyan); }
+.tok-str { color: var(--kn-magenta); }
+.tok-com { color: var(--kn-muted); font-style: italic; }
+.tok-fn { color: oklch(0.88 0.10 90); }
+.tok-num { color: oklch(0.80 0.12 60); }
+.tok-id { color: var(--kn-fg); }
+.tok-punc { color: oklch(0.70 0.02 260); }
+
+/* selection */
+::selection {
+  background: oklch(0.70 0.20 290 / 0.4);
+  color: var(--kn-fg);
+}
