@@ -81,31 +81,6 @@ export function StepGate({
   );
 }
 
-export function FocusRing({
-  active,
-  className = "",
-  children,
-}: {
-  active: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <motion.div
-      className={className}
-      animate={{
-        scale: active ? 1.02 : 1,
-        boxShadow: active
-          ? "0 0 0 2px oklch(0.85 0.15 200 / 0.7), 0 0 60px -8px oklch(0.85 0.15 200 / 0.6)"
-          : "0 0 0 0px oklch(0.85 0.15 200 / 0), 0 0 0px 0px oklch(0.85 0.15 200 / 0)",
-      }}
-      transition={{ duration: 0.5, ease: EASE }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 /* ============================================================
    LAYOUT SCAFFOLD - heading at top, content centered below
    ============================================================ */
@@ -217,29 +192,34 @@ function CoverSlide() {
    02. AGENDA
    ============================================================ */
 
-const AGENDA = [
-  "CLI to GUI to Voice",
-  "Use Cases",
-  "Web App Architecture",
-  "JavaScript Implementation",
-  "Demo",
-  "Phrase vs Intent",
-  "Best Practices",
-  "Q&A",
+const AGENDA: Array<[string, string]> = [
+  ["CLI to GUI to Voice", "1m"],
+  ["Use Cases", "1m"],
+  ["Interaction Loop", "3m"],
+  ["Commands vs Conversation", "2m"],
+  ["From Mic to Action", "4m"],
+  ["Live Demo", "3m"],
+  ["Where AI Fits", "2m"],
+  ["Hybrid Model", "2m"],
+  ["Ship-ready Voice", "2m"],
+  ["Q&A", "5m"],
 ];
 
 function AgendaSlide() {
   return (
-    <SlideShell kicker="02 · The Path" title="Talk Agenda">
-      <div className="grid grid-cols-2 gap-x-20 gap-y-10 max-w-[1600px]">
-        {AGENDA.map((item, i) => (
-          <Reveal key={item} at={0} delay={0.25 + i * 0.08} y={20}>
+    <SlideShell kicker="02 · The Path · ~25 min" title="Talk Agenda">
+      <div className="grid grid-cols-2 gap-x-20 gap-y-7 max-w-[1600px]">
+        {AGENDA.map(([item, dur], i) => (
+          <Reveal key={item} at={0} delay={0.2 + i * 0.06} y={18}>
             <div className="flex items-center gap-8">
-              <span className="kn-mono text-[22px] text-kn-cyan w-16">
+              <span className="kn-mono text-[20px] text-kn-cyan w-14">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="kn-display text-[44px] text-kn-fg/90 font-semibold">
+              <span className="kn-display text-[38px] text-kn-fg/90 font-semibold flex-1">
                 {item}
+              </span>
+              <span className="kn-mono text-[14px] text-kn-fg/40 tracking-[0.2em] tabular-nums">
+                {dur}
               </span>
             </div>
           </Reveal>
@@ -826,159 +806,6 @@ function CommandsVsConvoSlide() {
 }
 
 /* ============================================================
-   07. ARCHITECTURE - CLEAN STATE FLOW
-   ============================================================ */
-
-const FLOW_NODES = [
-  {
-    id: "input",
-    label: "Speech Input",
-    sub: "Web Speech API · streaming STT",
-    color: "var(--kn-cyan)",
-    glyph: "🎙",
-    payload: "audio chunks",
-  },
-  {
-    id: "state",
-    label: "Transcript State",
-    sub: "interim + final, isolated",
-    color: "var(--kn-violet)",
-    glyph: "≡",
-    payload: '"next slide"',
-  },
-  {
-    id: "parser",
-    label: "Intent Parser",
-    sub: "match to a known intent",
-    color: "var(--kn-magenta)",
-    glyph: "✦",
-    payload: '{ cmd: "next_slide" }',
-  },
-  {
-    id: "dispatch",
-    label: "Action Dispatcher",
-    sub: "the only thing that mutates",
-    color: "oklch(0.85 0.18 140)",
-    glyph: "→",
-    payload: "goNext()",
-  },
-];
-
-function ArchitectureFlowSlide() {
-  return (
-    <SlideShell kicker="07 · Voice architecture" title="A Clean State Flow">
-      <div className="flex flex-col items-center justify-center gap-10">
-        <div className="grid grid-cols-4 gap-6 w-full max-w-[1700px] relative">
-          {/* connector rail */}
-          <div className="absolute top-[140px] left-[5%] right-[5%] h-px bg-gradient-to-r from-kn-cyan/40 via-kn-violet/40 to-kn-magenta/40 -z-10 pointer-events-none" />
-
-          {FLOW_NODES.map((n, i) => (
-            <Reveal key={n.id} at={0} delay={0.2 + i * 0.18} y={24}>
-              <motion.div
-                className="kn-glass h-[340px] p-10 flex flex-col justify-between relative overflow-hidden"
-                style={{
-                  borderColor: n.color,
-                  boxShadow: `0 0 40px -10px ${n.color}, 0 0 0 1px ${n.color} inset`,
-                }}
-                animate={{ y: [0, -4, 0] }}
-                transition={{
-                  duration: 5 + i * 0.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                {/* scan-line */}
-                <motion.div
-                  className="absolute left-0 right-0 h-[80px] pointer-events-none"
-                  style={{
-                    background: `linear-gradient(180deg, transparent, ${n.color}33, transparent)`,
-                  }}
-                  initial={{ top: -80 }}
-                  animate={{ top: [-80, 340] }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "linear",
-                    delay: i * 1.5,
-                  }}
-                />
-
-                <div className="flex items-center justify-between relative">
-                  <div
-                    className="kn-mono text-[14px]"
-                    style={{ color: n.color }}
-                  >
-                    Stage {String(i + 1).padStart(2, "0")}
-                  </div>
-                  <motion.div
-                    className="text-[28px]"
-                    style={{ color: n.color }}
-                    animate={{ opacity: [0.6, 1, 0.6] }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      delay: i * 0.4,
-                    }}
-                  >
-                    {n.glyph}
-                  </motion.div>
-                </div>
-                <div className="relative">
-                  <div className="kn-display text-[36px] font-bold leading-tight">
-                    {n.label}
-                  </div>
-                  <div className="text-[18px] text-kn-fg/60 mt-3">{n.sub}</div>
-                  <div
-                    className="mt-5 inline-block kn-mono text-[12px] px-3 py-1.5 rounded-md border"
-                    style={{ color: n.color, borderColor: `${n.color}40` }}
-                  >
-                    {n.payload}
-                  </div>
-                </div>
-              </motion.div>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Continuous data packet flowing through pipeline */}
-        <div className="w-full max-w-[1700px] relative h-8">
-          <div className="absolute inset-0 h-px top-1/2 bg-gradient-to-r from-kn-cyan/30 via-kn-violet/30 to-kn-magenta/30" />
-          {[
-            { d: 0, label: "audio", color: "var(--kn-cyan)" },
-            { d: 0.33, label: '"text"', color: "var(--kn-violet)" },
-            { d: 0.66, label: "{intent}", color: "var(--kn-magenta)" },
-          ].map((p) => (
-            <motion.div
-              key={p.d}
-              className="absolute top-1/2 -translate-y-1/2 px-3 py-1 rounded-full kn-mono text-[11px]"
-              style={{
-                color: p.color,
-                background: "oklch(0.10 0.02 265 / 0.8)",
-                border: `1px solid ${p.color}`,
-                boxShadow: `0 0 14px 2px ${p.color}66`,
-              }}
-              animate={{ left: ["0%", "calc(100% - 80px)"] }}
-              transition={{
-                duration: 5,
-                ease: "easeInOut",
-                repeat: Infinity,
-                delay: p.d * 5,
-              }}
-            >
-              {p.label}
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="kn-mono text-[14px] text-kn-fg/50 tracking-[0.3em]">
-          UNIDIRECTIONAL · ISOLATED · DEBUGGABLE
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
-/* ============================================================
    08. JS IMPLEMENTATION - From mic to action
    ============================================================ */
 
@@ -1042,7 +869,7 @@ function JsImplementationSlide() {
   ];
 
   return (
-    <SlideShell kicker="08 · JavaScript Implementation" title="From mic to action">
+    <SlideShell kicker="07 · JavaScript Implementation" title="From mic to action">
       <div className="grid grid-cols-3 gap-8">
         {cards.map((card, i) => {
           const visible = step >= i;
@@ -1194,7 +1021,7 @@ function DemoSlide() {
     <div className="absolute inset-0 flex flex-col items-center justify-center px-32">
       <div className="relative z-10 text-center">
         <Reveal at={0}>
-          <Kicker>09 · Live</Kicker>
+          <Kicker>08 · Live</Kicker>
         </Reveal>
         <Reveal at={0} delay={0.15}>
           <h1 className="kn-display text-[240px] mt-6 leading-none">
@@ -1221,201 +1048,12 @@ function DemoSlide() {
 }
 
 /* ============================================================
-   10. TRIGGER COMMANDS - From phrase to handler
-   ============================================================ */
-
-const FLOW_PHRASES = [
-  { phrase: "next slide", action: "goNext()", color: "var(--kn-cyan)" },
-  { phrase: "pause timer", action: "pauseTimer()", color: "var(--kn-violet)" },
-  { phrase: "open demo", action: "openDemo()", color: "var(--kn-magenta)" },
-];
-
-function PhraseHandlerLoop() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setI((v) => (v + 1) % FLOW_PHRASES.length), 2800);
-    return () => clearInterval(id);
-  }, []);
-  const cur = FLOW_PHRASES[i];
-
-  return (
-    <div className="kn-glass p-8 h-[280px] flex items-center justify-between gap-6 relative overflow-hidden">
-      {/* Phrase chip */}
-      <div className="w-[280px]">
-        <div className="kn-mono text-[12px] text-kn-fg/40 mb-3">phrase</div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={cur.phrase}
-            className="kn-glass px-5 py-3 inline-flex items-center gap-3 font-mono text-[22px]"
-            style={{ borderRadius: 999, color: cur.color, borderColor: cur.color }}
-            initial={{ opacity: 0, x: -30, filter: "blur(6px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: 30, filter: "blur(6px)" }}
-            transition={{ duration: 0.5, ease: EASE }}
-          >
-            <motion.span
-              animate={{ opacity: [1, 0.4, 1] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-            >
-              ●
-            </motion.span>
-            "{cur.phrase}"
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Arrow + flowing packet */}
-      <div className="flex-1 relative h-8 mx-4">
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-kn-fg/15" />
-        <motion.div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
-          style={{
-            background: cur.color,
-            boxShadow: `0 0 16px 4px ${cur.color}`,
-          }}
-          animate={{ left: ["0%", "100%"] }}
-          transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }}
-        />
-      </div>
-
-      {/* Registry box */}
-      <div className="w-[280px] kn-glass rounded-xl px-4 py-3 font-mono text-[13px] text-kn-fg/85">
-        <div className="kn-mono text-[10px] text-kn-fg/40 mb-2">registry</div>
-        {FLOW_PHRASES.map((p, idx) => (
-          <motion.div
-            key={p.phrase}
-            className="py-1 flex items-center gap-2"
-            animate={{
-              color: idx === i ? p.color : "oklch(0.62 0.02 260)",
-              x: idx === i ? 4 : 0,
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <span>{idx === i ? "▸" : "·"}</span>
-            <span>"{p.phrase}"</span>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Arrow */}
-      <div className="flex-1 relative h-8 mx-4">
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-kn-fg/15" />
-        <motion.div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
-          style={{
-            background: cur.color,
-            boxShadow: `0 0 16px 4px ${cur.color}`,
-          }}
-          animate={{ left: ["0%", "100%"] }}
-          transition={{
-            duration: 1.6,
-            ease: "easeInOut",
-            repeat: Infinity,
-            delay: 0.8,
-          }}
-        />
-      </div>
-
-      {/* Handler firing */}
-      <div className="w-[260px]">
-        <div className="kn-mono text-[12px] text-kn-fg/40 mb-3">handler</div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={cur.action}
-            className="font-mono text-[22px] inline-flex items-center gap-3"
-            style={{ color: cur.color }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.5, ease: EASE, delay: 1.3 }}
-          >
-            <motion.span
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 0.6, delay: 1.3 }}
-            >
-              ✓
-            </motion.span>
-            {cur.action}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
-
-const TRIGGER_EXAMPLES = [
-  { group: "Navigation", phrases: ["next slide", "previous slide", "open demo"] },
-  { group: "Controls", phrases: ["start listening", "stop listening", "pause timer"] },
-  { group: "Tasks", phrases: ["search docs", "filter by status", "create a note"] },
-];
-
-function TriggerCommandsSlide() {
-  return (
-    <SlideShell kicker="10 · Trigger Commands" title="From phrase to handler">
-      <div className="flex flex-col gap-10">
-        <Reveal at={0} delay={0.15}>
-          <PhraseHandlerLoop />
-        </Reveal>
-
-        <div className="grid grid-cols-2 gap-12">
-          <div className="space-y-6">
-            <div className="kn-mono text-[14px] text-kn-cyan">Examples</div>
-            {TRIGGER_EXAMPLES.map((row, i) => (
-              <Reveal key={row.group} at={0} delay={0.35 + i * 0.12} y={14}>
-                <div>
-                  <div className="kn-mono text-[14px] text-kn-fg/50 mb-2">
-                    {row.group}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {row.phrases.map((p) => (
-                      <span
-                        key={p}
-                        className="kn-glass px-4 py-2 text-[18px] font-mono"
-                        style={{ borderRadius: 999 }}
-                      >
-                        "{p}"
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-
-          <Reveal at={0} delay={0.5}>
-            <div className="kn-glass p-10">
-              <div className="kn-mono text-[14px] text-kn-magenta">
-                How to detect them
-              </div>
-              <div className="mt-6 space-y-5">
-                {[
-                  ["Command Registry", "One place stores phrases and handlers."],
-                  ["Aliases", "Variations like 'go next', 'next one', 'show demo'."],
-                  ["Confidence", "Require certainty before firing state changes."],
-                ].map(([key, v]) => (
-                  <div key={key}>
-                    <div className="kn-display text-[24px] font-bold">{key}</div>
-                    <div className="text-[18px] text-kn-fg/65 mt-1 leading-snug">
-                      {v}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
-/* ============================================================
    11. USING AI
    ============================================================ */
 
 function UsingAiSlide() {
   return (
-    <SlideShell kicker="11 · Using AI" title="Where AI fits">
+    <SlideShell kicker="09 · Using AI" title="Where AI fits">
       <div className="grid grid-cols-2 gap-12">
         <Reveal at={0} delay={0.2}>
           <div className="kn-glass kn-glow-cyan p-12 h-[620px]">
@@ -1498,7 +1136,7 @@ function HybridModelSlide() {
   const stage = useAutoStage(3, 2000, 1);
 
   return (
-    <SlideShell kicker="12 · Using AI" title="The Hybrid Model">
+    <SlideShell kicker="10 · Using AI" title="The Hybrid Model">
       <div className="flex flex-col justify-center gap-12">
         <Reveal at={0} delay={0.15}>
           <div className="flex items-center justify-center">
@@ -1598,224 +1236,6 @@ function HybridModelSlide() {
 }
 
 /* ============================================================
-   13. EXTRACT THE INTENT
-   ============================================================ */
-
-const INTENT_EXAMPLES = [
-  {
-    raw: "uh can you maybe go to the next one",
-    cmd: "next_slide",
-    conf: 0.92,
-  },
-  {
-    raw: "could we pause the timer for now",
-    cmd: "pause_timer",
-    conf: 0.88,
-  },
-  {
-    raw: "show me the agenda again please",
-    cmd: "open_agenda",
-    conf: 0.81,
-  },
-];
-
-function IntentTransformLoop() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setI((v) => (v + 1) % INTENT_EXAMPLES.length),
-      3500
-    );
-    return () => clearInterval(id);
-  }, []);
-  const cur = INTENT_EXAMPLES[i];
-
-  return (
-    <div className="flex items-center justify-center gap-10 min-h-[280px]">
-      <div className="w-[640px]">
-        <div className="kn-mono text-[12px] text-kn-fg/40 mb-3">
-          Raw transcript
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={cur.raw}
-            className="kn-glass p-8"
-            initial={{ opacity: 0, x: -20, filter: "blur(6px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -20, filter: "blur(6px)" }}
-            transition={{ duration: 0.5, ease: EASE }}
-          >
-            <div className="text-[26px] font-mono text-kn-fg/85 leading-snug">
-              "{cur.raw}"
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      <div className="flex flex-col items-center">
-        <motion.div
-          className="text-[40px] text-kn-cyan"
-          animate={{ x: [0, 14, 0], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        >
-          →
-        </motion.div>
-        <div className="kn-mono text-[12px] text-kn-fg/40 mt-2">AI parse</div>
-        {/* particle stream */}
-        <div className="relative h-1 w-24 mt-3 overflow-hidden rounded-full bg-kn-fg/10">
-          <motion.div
-            className="absolute top-0 h-full w-8 rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, var(--kn-cyan), transparent)",
-            }}
-            animate={{ left: ["-20%", "120%"] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
-          />
-        </div>
-      </div>
-
-      <div className="w-[480px]">
-        <div className="kn-mono text-[12px] text-kn-cyan mb-3">
-          Structured intent
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={cur.cmd}
-            className="kn-glass kn-glow-cyan p-8"
-            initial={{ opacity: 0, scale: 0.95, filter: "blur(6px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.95, filter: "blur(6px)" }}
-            transition={{ duration: 0.5, ease: EASE, delay: 0.2 }}
-          >
-            <div className="font-mono text-[22px] leading-relaxed">
-              <div>
-                <span className="tok-punc">{"{"}</span>
-              </div>
-              <div className="pl-6">
-                <span className="tok-id">command</span>
-                <span className="tok-punc">: </span>
-                <span className="tok-str">"{cur.cmd}"</span>
-                <span className="tok-punc">,</span>
-              </div>
-              <div className="pl-6">
-                <span className="tok-id">confidence</span>
-                <span className="tok-punc">: </span>
-                <span className="tok-num">{cur.conf}</span>
-              </div>
-              <div>
-                <span className="tok-punc">{"}"}</span>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
-
-function PhraseToIntentSlide() {
-  return (
-    <SlideShell
-      kicker="13 · Phrase vs Intent"
-      title={
-        <>
-          Extract the <span className="kn-text-grad">intent</span>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-12">
-        <IntentTransformLoop />
-
-        <div className="grid grid-cols-3 gap-10">
-          {[
-            ["Model the meaning", "Classify the transcript into one allowed intent."],
-            ["Validate before acting", "Only known command ids reach the dispatcher."],
-            ["Hybrid works best", "Exact match first. AI only when fuzzy."],
-          ].map(([t, v], i) => (
-            <Reveal key={t} at={0} delay={0.4 + i * 0.15} y={20}>
-              <div>
-                <div className="kn-display text-[28px] font-bold">{t}</div>
-                <div className="text-[20px] text-kn-fg/65 mt-3 leading-snug">
-                  {v}
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
-/* ============================================================
-   14. DEMO - with AI
-   ============================================================ */
-
-function DemoAiSlide() {
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center px-32">
-      <div className="relative z-10 text-center">
-        <Reveal at={0}>
-          <Kicker>14 · Live · with AI</Kicker>
-        </Reveal>
-        <Reveal at={0} delay={0.15}>
-          <h1 className="kn-display text-[200px] mt-6 leading-none">
-            Demo <span className="kn-text-grad">+ AI</span>
-          </h1>
-        </Reveal>
-        <Reveal at={0} delay={0.35}>
-          <div className="mt-12 text-[28px] text-kn-fg/70 max-w-[1100px] mx-auto">
-            Now natural phrases route through AI intent extraction.
-          </div>
-        </Reveal>
-        <Reveal at={0} delay={0.55}>
-          <div className="mt-14 inline-flex items-center gap-6">
-            <div className="kn-glass kn-glow-cyan inline-flex items-center gap-6 px-10 py-6">
-              <motion.div
-                className="w-6 h-6 rounded-full"
-                style={{ background: "var(--kn-cyan)" }}
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.6, repeat: Infinity }}
-              />
-              <div className="text-[32px] font-mono">/demo-dictation</div>
-              <div className="kn-mono text-[14px] text-kn-fg/50">AI mode →</div>
-            </div>
-          </div>
-        </Reveal>
-
-        {/* example phrases scrolling */}
-        <Reveal at={0} delay={0.8}>
-          <div className="mt-16 flex flex-wrap items-center justify-center gap-3 max-w-[1300px] mx-auto">
-            {[
-              '"can you take me back"',
-              '"skip ahead two slides"',
-              '"hold the timer"',
-              '"go to the agenda"',
-              '"show that demo again"',
-            ].map((p, i) => (
-              <motion.span
-                key={p}
-                className="kn-glass px-5 py-3 font-mono text-[18px] text-kn-fg/75"
-                style={{ borderRadius: 999 }}
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  delay: i * 0.4,
-                }}
-              >
-                {p}
-              </motion.span>
-            ))}
-          </div>
-        </Reveal>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
    15. BEST PRACTICES
    ============================================================ */
 
@@ -1832,7 +1252,7 @@ const BEST_PRACTICES = [
 
 function BestPracticesSlide() {
   return (
-    <SlideShell kicker="15 · Best Practices" title="Ship-ready voice">
+    <SlideShell kicker="11 · Best Practices" title="Ship-ready voice">
       <div className="grid grid-cols-2 gap-x-12 gap-y-6">
         {BEST_PRACTICES.map((bp, i) => (
           <Reveal key={bp} at={0} delay={0.15 + i * 0.08} y={14}>
@@ -1864,7 +1284,7 @@ const SUMMARY = [
 
 function SummingUpSlide() {
   return (
-    <SlideShell kicker="16 · Summing up" title="Principles to take home">
+    <SlideShell kicker="12 · Summing up" title="Principles to take home">
       <div className="flex flex-col gap-10">
         <div className="grid grid-cols-2 gap-x-16 gap-y-6">
           {SUMMARY.map((line, i) => (
@@ -1900,7 +1320,7 @@ function QaThanksSlide() {
     <div className="absolute inset-0 flex flex-col px-32 py-20">
       <div className="relative z-10 flex-1 flex flex-col">
         <Reveal at={0}>
-          <Kicker>17 · Over to you</Kicker>
+          <Kicker>13 · Over to you</Kicker>
         </Reveal>
 
         <div className="flex-1 flex flex-col items-center justify-center -mt-8">
@@ -1977,14 +1397,10 @@ export const slides: SlideDef[] = [
   { id: "use-cases", title: "Use Cases", steps: 1, render: () => <UseCasesSlide /> },
   { id: "loop", title: "The Interaction Loop", steps: 1, render: () => <InteractionLoopSlide /> },
   { id: "cmd-convo", title: "Commands vs Conversation", steps: 1, render: () => <CommandsVsConvoSlide /> },
-  { id: "arch-flow", title: "A Clean State Flow", steps: 1, render: () => <ArchitectureFlowSlide /> },
   { id: "js-impl", title: "From mic to action", steps: 3, render: () => <JsImplementationSlide /> },
   { id: "demo", title: "Demo", steps: 1, render: () => <DemoSlide /> },
-  { id: "triggers", title: "From phrase to handler", steps: 1, render: () => <TriggerCommandsSlide /> },
   { id: "ai-where", title: "Where AI fits", steps: 1, render: () => <UsingAiSlide /> },
   { id: "hybrid", title: "The Hybrid Model", steps: 1, render: () => <HybridModelSlide /> },
-  { id: "phrase-intent", title: "Extract the intent", steps: 1, render: () => <PhraseToIntentSlide /> },
-  { id: "demo-ai", title: "Demo · with AI", steps: 1, render: () => <DemoAiSlide /> },
   { id: "best", title: "Ship-ready voice", steps: 1, render: () => <BestPracticesSlide /> },
   { id: "sum", title: "Summing Up", steps: 1, render: () => <SummingUpSlide /> },
   { id: "qa-thanks", title: "Q&A · Thanks", steps: 1, render: () => <QaThanksSlide /> },

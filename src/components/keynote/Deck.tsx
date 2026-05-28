@@ -276,6 +276,11 @@ function GlobalAurora() {
    TOP HUD - title · counter · meetup + timer
    ============================================================ */
 
+type PaceLevel = "ok" | "warn" | "danger";
+
+const WARN_THRESHOLD_SECONDS = 5 * 60;
+const DANGER_THRESHOLD_SECONDS = 60;
+
 function useCountdown(totalSeconds: number) {
   const [remaining, setRemaining] = useState(totalSeconds);
   useEffect(() => {
@@ -286,15 +291,36 @@ function useCountdown(totalSeconds: number) {
   }, []);
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
+  const level: PaceLevel =
+    remaining <= DANGER_THRESHOLD_SECONDS
+      ? "danger"
+      : remaining <= WARN_THRESHOLD_SECONDS
+        ? "warn"
+        : "ok";
   return {
     label: `${mm}:${ss}`,
     pct: remaining / totalSeconds,
     remaining,
+    level,
   };
 }
 
+const PACE_COLOR: Record<PaceLevel, string> = {
+  ok: "var(--kn-grad-aurora)",
+  warn: "oklch(0.82 0.18 70)",
+  danger: "oklch(0.65 0.25 25)",
+};
+
+const PACE_LABEL: Record<PaceLevel, string> = {
+  ok: "var(--kn-fg)",
+  warn: "oklch(0.82 0.18 70)",
+  danger: "oklch(0.72 0.25 25)",
+};
+
 function TopHUD() {
-  const { label, pct } = useCountdown(TIMER_TOTAL_SECONDS);
+  const { label, pct, level } = useCountdown(TIMER_TOTAL_SECONDS);
+  const pulsing = level !== "ok";
+  const pulseDuration = level === "danger" ? 0.8 : 1.6;
 
   return (
     <div className="fixed top-0 inset-x-0 z-40 pointer-events-none">
@@ -307,22 +333,63 @@ function TopHUD() {
         {/* CENTER - timer + depleting bar */}
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-3">
-            <TimerIcon />
-            <div className="kn-mono text-[14px] text-kn-fg tracking-[0.22em] font-bold tabular-nums">
-              {label}
-            </div>
+            <motion.div
+              animate={
+                pulsing
+                  ? { color: PACE_LABEL[level], opacity: [1, 0.55, 1] }
+                  : { color: PACE_LABEL.ok, opacity: 1 }
+              }
+              transition={
+                pulsing
+                  ? { duration: pulseDuration, repeat: Infinity }
+                  : { duration: 0.4 }
+              }
+              className="flex items-center gap-3"
+            >
+              <TimerIcon />
+              <div className="kn-mono text-[14px] tracking-[0.22em] font-bold tabular-nums">
+                {label}
+              </div>
+            </motion.div>
+            {level !== "ok" && (
+              <motion.span
+                className="kn-mono text-[10px] font-bold tracking-[0.3em] px-2 py-1 rounded-full"
+                style={{
+                  color: PACE_LABEL[level],
+                  border: `1px solid ${PACE_LABEL[level]}`,
+                }}
+                animate={{ opacity: [1, 0.55, 1] }}
+                transition={{ duration: pulseDuration, repeat: Infinity }}
+              >
+                {level === "danger" ? "WRAP UP" : "PACING"}
+              </motion.span>
+            )}
           </div>
-          <div
-            className="h-[3px] w-[220px] rounded-full overflow-hidden"
+          <motion.div
+            className="rounded-full overflow-hidden"
             style={{ background: "oklch(0.65 0.05 260 / 0.18)" }}
+            animate={{
+              width: level === "danger" ? 260 : 220,
+              height: level === "danger" ? 5 : 3,
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <motion.div
               className="h-full rounded-full"
-              style={{ background: "var(--kn-grad-aurora)" }}
-              animate={{ width: `${Math.max(0, Math.min(1, pct)) * 100}%` }}
-              transition={{ duration: 0.5, ease: "linear" }}
+              animate={{
+                width: `${Math.max(0, Math.min(1, pct)) * 100}%`,
+                background: PACE_COLOR[level],
+                opacity: pulsing ? [1, 0.55, 1] : 1,
+              }}
+              transition={{
+                width: { duration: 0.5, ease: "linear" },
+                background: { duration: 0.4 },
+                opacity: pulsing
+                  ? { duration: pulseDuration, repeat: Infinity }
+                  : { duration: 0.4 },
+              }}
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* RIGHT - meetup */}
