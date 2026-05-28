@@ -311,16 +311,10 @@ const PACE_COLOR: Record<PaceLevel, string> = {
   danger: "oklch(0.65 0.25 25)",
 };
 
-const PACE_LABEL: Record<PaceLevel, string> = {
-  ok: "var(--kn-fg)",
-  warn: "oklch(0.82 0.18 70)",
-  danger: "oklch(0.72 0.25 25)",
-};
-
 function TopHUD() {
   const { label, pct, level } = useCountdown(TIMER_TOTAL_SECONDS);
   const pulsing = level !== "ok";
-  const pulseDuration = level === "danger" ? 0.8 : 1.6;
+  const pulseDuration = level === "danger" ? 0.7 : 1.4;
 
   return (
     <div className="fixed top-0 inset-x-0 z-40 pointer-events-none">
@@ -332,38 +326,11 @@ function TopHUD() {
 
         {/* CENTER - timer + depleting bar */}
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3">
-            <motion.div
-              animate={
-                pulsing
-                  ? { color: PACE_LABEL[level], opacity: [1, 0.55, 1] }
-                  : { color: PACE_LABEL.ok, opacity: 1 }
-              }
-              transition={
-                pulsing
-                  ? { duration: pulseDuration, repeat: Infinity }
-                  : { duration: 0.4 }
-              }
-              className="flex items-center gap-3"
-            >
-              <TimerIcon />
-              <div className="kn-mono text-[14px] tracking-[0.22em] font-bold tabular-nums">
-                {label}
-              </div>
-            </motion.div>
-            {level !== "ok" && (
-              <motion.span
-                className="kn-mono text-[10px] font-bold tracking-[0.3em] px-2 py-1 rounded-full"
-                style={{
-                  color: PACE_LABEL[level],
-                  border: `1px solid ${PACE_LABEL[level]}`,
-                }}
-                animate={{ opacity: [1, 0.55, 1] }}
-                transition={{ duration: pulseDuration, repeat: Infinity }}
-              >
-                {level === "danger" ? "WRAP UP" : "PACING"}
-              </motion.span>
-            )}
+          <div className="flex items-center gap-3 text-kn-fg">
+            <TimerIcon />
+            <div className="kn-mono text-[14px] tracking-[0.22em] font-bold tabular-nums">
+              {label}
+            </div>
           </div>
           <motion.div
             className="rounded-full overflow-hidden"
@@ -379,7 +346,7 @@ function TopHUD() {
               animate={{
                 width: `${Math.max(0, Math.min(1, pct)) * 100}%`,
                 background: PACE_COLOR[level],
-                opacity: pulsing ? [1, 0.55, 1] : 1,
+                opacity: pulsing ? [1, 0.4, 1] : 1,
               }}
               transition={{
                 width: { duration: 0.5, ease: "linear" },

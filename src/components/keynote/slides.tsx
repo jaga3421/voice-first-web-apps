@@ -194,14 +194,14 @@ function CoverSlide() {
 
 const AGENDA: Array<[string, string]> = [
   ["CLI to GUI to Voice", "1m"],
-  ["Use Cases", "1m"],
-  ["Interaction Loop", "3m"],
-  ["Commands vs Conversation", "2m"],
+  ["Use Cases", "2m"],
+  ["Interaction Flow", "3m"],
   ["From Mic to Action", "4m"],
-  ["Live Demo", "3m"],
+  ["Live Demo", "4m"],
   ["Where AI Fits", "2m"],
   ["Hybrid Model", "2m"],
-  ["Ship-ready Voice", "2m"],
+  ["Ship-ready Voice", "1m"],
+  ["Summing Up", "1m"],
   ["Q&A", "5m"],
 ];
 
@@ -623,7 +623,17 @@ function InteractionLoopSlide() {
   return (
     <SlideShell
       kicker="05 · How voice interfaces work"
-      title="The Interaction Loop"
+      title={
+        <>
+          Interaction{" "}
+          <span className="relative inline-block text-kn-fg/35 font-light">
+            <span className="line-through decoration-[6px] decoration-kn-magenta/70">
+              Loop
+            </span>
+          </span>{" "}
+          Flow
+        </>
+      }
     >
       <div className="flex items-center">
         <div className="grid grid-cols-4 gap-8 w-full relative">
@@ -732,80 +742,6 @@ function InteractionLoopSlide() {
 }
 
 /* ============================================================
-   06. COMMANDS vs CONVERSATION
-   ============================================================ */
-
-function CommandsVsConvoSlide() {
-  return (
-    <SlideShell kicker="06 · Two modes of voice" title="Commands vs Conversation">
-      <div className="grid grid-cols-2 gap-12">
-        <Reveal at={0} delay={0.15}>
-          <div className="kn-glass kn-glow-cyan h-[680px] p-14 flex flex-col">
-            <div className="kn-mono text-[14px] text-kn-cyan">Mode A</div>
-            <div className="kn-display text-[64px] mt-2 font-extrabold">
-              Command Mode
-            </div>
-            <div className="mt-10 space-y-7">
-              {[
-                ["Deterministic", "Exact phrases like 'next slide' or 'submit'."],
-                ["Fast", "Low latency, predictable, bounded actions."],
-                ["Safer", "Best for navigation, toggles, and filters."],
-              ].map(([key, v], i) => (
-                <Reveal
-                  key={key}
-                  at={0}
-                  delay={0.3 + i * 0.12}
-                  y={12}
-                  className="flex gap-5"
-                >
-                  <div className="text-kn-cyan kn-mono text-[14px] w-32 pt-2 flex-none">
-                    {key}
-                  </div>
-                  <div className="text-[24px] text-kn-fg/85 leading-snug">
-                    {v}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal at={0} delay={0.3}>
-          <div className="kn-glass kn-glow-magenta h-[680px] p-14 flex flex-col">
-            <div className="kn-mono text-[14px] text-kn-magenta">Mode B</div>
-            <div className="kn-display text-[64px] mt-2 font-extrabold">
-              Conversation Mode
-            </div>
-            <div className="mt-10 space-y-7">
-              {[
-                ["Flexible", "Natural language: 'show last week's signups'."],
-                ["Ambiguous", "Needs interpretation and slot extraction."],
-                ["AI-Friendly", "Best for assistants, search, and summaries."],
-              ].map(([key, v], i) => (
-                <Reveal
-                  key={key}
-                  at={0}
-                  delay={0.45 + i * 0.12}
-                  y={12}
-                  className="flex gap-5"
-                >
-                  <div className="text-kn-magenta kn-mono text-[14px] w-32 pt-2 flex-none">
-                    {key}
-                  </div>
-                  <div className="text-[24px] text-kn-fg/85 leading-snug">
-                    {v}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </SlideShell>
-  );
-}
-
-/* ============================================================
    08. JS IMPLEMENTATION - From mic to action
    ============================================================ */
 
@@ -869,7 +805,7 @@ function JsImplementationSlide() {
   ];
 
   return (
-    <SlideShell kicker="07 · JavaScript Implementation" title="From mic to action">
+    <SlideShell kicker="06 · JavaScript Implementation" title="From mic to action">
       <div className="grid grid-cols-3 gap-8">
         {cards.map((card, i) => {
           const visible = step >= i;
@@ -1021,7 +957,7 @@ function DemoSlide() {
     <div className="absolute inset-0 flex flex-col items-center justify-center px-32">
       <div className="relative z-10 text-center">
         <Reveal at={0}>
-          <Kicker>08 · Live</Kicker>
+          <Kicker>07 · Live</Kicker>
         </Reveal>
         <Reveal at={0} delay={0.15}>
           <h1 className="kn-display text-[240px] mt-6 leading-none">
@@ -1053,7 +989,7 @@ function DemoSlide() {
 
 function UsingAiSlide() {
   return (
-    <SlideShell kicker="09 · Using AI" title="Where AI fits">
+    <SlideShell kicker="08 · Using AI" title="Where AI fits">
       <div className="grid grid-cols-2 gap-12">
         <Reveal at={0} delay={0.2}>
           <div className="kn-glass kn-glow-cyan p-12 h-[620px]">
@@ -1136,7 +1072,7 @@ function HybridModelSlide() {
   const stage = useAutoStage(3, 2000, 1);
 
   return (
-    <SlideShell kicker="10 · Using AI" title="The Hybrid Model">
+    <SlideShell kicker="09 · Using AI" title="The Hybrid Model">
       <div className="flex flex-col justify-center gap-12">
         <Reveal at={0} delay={0.15}>
           <div className="flex items-center justify-center">
@@ -1252,7 +1188,7 @@ const BEST_PRACTICES = [
 
 function BestPracticesSlide() {
   return (
-    <SlideShell kicker="11 · Best Practices" title="Ship-ready voice">
+    <SlideShell kicker="10 · Best Practices" title="Ship-ready voice">
       <div className="grid grid-cols-2 gap-x-12 gap-y-6">
         {BEST_PRACTICES.map((bp, i) => (
           <Reveal key={bp} at={0} delay={0.15 + i * 0.08} y={14}>
@@ -1284,7 +1220,7 @@ const SUMMARY = [
 
 function SummingUpSlide() {
   return (
-    <SlideShell kicker="12 · Summing up" title="Principles to take home">
+    <SlideShell kicker="11 · Summing up" title="Principles to take home">
       <div className="flex flex-col gap-10">
         <div className="grid grid-cols-2 gap-x-16 gap-y-6">
           {SUMMARY.map((line, i) => (
@@ -1320,7 +1256,7 @@ function QaThanksSlide() {
     <div className="absolute inset-0 flex flex-col px-32 py-20">
       <div className="relative z-10 flex-1 flex flex-col">
         <Reveal at={0}>
-          <Kicker>13 · Over to you</Kicker>
+          <Kicker>12 · Over to you</Kicker>
         </Reveal>
 
         <div className="flex-1 flex flex-col items-center justify-center -mt-8">
@@ -1395,8 +1331,7 @@ export const slides: SlideDef[] = [
   { id: "agenda", title: "Talk Agenda", steps: 1, render: () => <AgendaSlide /> },
   { id: "evolution", title: "CLI to GUI to Voice", steps: 1, render: () => <EvolutionSlide /> },
   { id: "use-cases", title: "Use Cases", steps: 1, render: () => <UseCasesSlide /> },
-  { id: "loop", title: "The Interaction Loop", steps: 1, render: () => <InteractionLoopSlide /> },
-  { id: "cmd-convo", title: "Commands vs Conversation", steps: 1, render: () => <CommandsVsConvoSlide /> },
+  { id: "loop", title: "Interaction Flow", steps: 1, render: () => <InteractionLoopSlide /> },
   { id: "js-impl", title: "From mic to action", steps: 3, render: () => <JsImplementationSlide /> },
   { id: "demo", title: "Demo", steps: 1, render: () => <DemoSlide /> },
   { id: "ai-where", title: "Where AI fits", steps: 1, render: () => <UsingAiSlide /> },
