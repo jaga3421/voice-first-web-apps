@@ -42,7 +42,7 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   background: var(--kn-bg);
@@ -50,6 +50,10 @@ body,
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body:has(.kn-root) {
+  height: 100%;
   overflow: hidden;
 }
 

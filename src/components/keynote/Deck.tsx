@@ -7,6 +7,9 @@ import {
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { slides, StepContext } from "./slides";
+import VoiceInterface from "../voice-interface/VoiceInterface";
+import VoiceSubtitleBar from "../voice-interface/VoiceSubtitleBar";
+import VoiceCelebration from "../voice-interface/VoiceCelebration";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TIMER_TOTAL_SECONDS = 25 * 60;
@@ -50,10 +53,49 @@ export function Deck() {
     []
   );
 
+  /* ----- voice / external nav events ----- */
+  useEffect(() => {
+    const onAdvance = () => advance();
+    const onRetreat = () => retreat();
+    const onGoIndex = (event: Event) => {
+      const ce = event as CustomEvent<{ index?: number }>;
+      if (typeof ce.detail?.index === "number") {
+        go(ce.detail.index, "first");
+      }
+    };
+    const onGoId = (event: Event) => {
+      const ce = event as CustomEvent<{ id?: string }>;
+      const id = ce.detail?.id;
+      if (!id) return;
+      const idx = slides.findIndex((s) => s.id === id);
+      if (idx >= 0) go(idx, "first");
+    };
+
+    window.addEventListener("deck:advance", onAdvance);
+    window.addEventListener("deck:retreat", onRetreat);
+    window.addEventListener("deck:go-index", onGoIndex);
+    window.addEventListener("deck:go-id", onGoId);
+    return () => {
+      window.removeEventListener("deck:advance", onAdvance);
+      window.removeEventListener("deck:retreat", onRetreat);
+      window.removeEventListener("deck:go-index", onGoIndex);
+      window.removeEventListener("deck:go-id", onGoId);
+    };
+  }, [advance, retreat, go]);
+
   /* ----- keyboard ----- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const target = e.target;
+      const isTypingTarget =
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      if (isTypingTarget) return;
+
       switch (e.key) {
         case "ArrowRight":
         case " ":
@@ -133,6 +175,10 @@ export function Deck() {
       <BottomHUD index={index} total={slides.length} />
 
       <MobileTapNav onPrev={retreat} onNext={advance} />
+
+      <VoiceInterface />
+      <VoiceSubtitleBar />
+      <VoiceCelebration />
 
       <AnimatePresence>
         {gridOpen && (
@@ -283,12 +329,59 @@ const DANGER_THRESHOLD_SECONDS = 60;
 
 function useCountdown(totalSeconds: number) {
   const [remaining, setRemaining] = useState(totalSeconds);
+  const [isActive, setIsActive] = useState(false);
+  const [actionLabel, setActionLabel] = useState<string>("");
+  const [focusVisible, setFocusVisible] = useState(false);
+  const focusTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
+    if (!isActive) return;
     const id = window.setInterval(() => {
       setRemaining((r) => (r > 0 ? r - 1 : 0));
     }, 1000);
     return () => window.clearInterval(id);
+  }, [isActive]);
+
+  useEffect(() => {
+    if (remaining === 0) {
+      setIsActive(false);
+    }
+  }, [remaining]);
+
+  const flashAction = useCallback((label: string) => {
+    setActionLabel(label);
+    setFocusVisible(true);
+    if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = window.setTimeout(() => {
+      setFocusVisible(false);
+    }, 1800);
   }, []);
+
+  useEffect(() => {
+    const handle = (event: Event) => {
+      const ce = event as CustomEvent<{ action?: string }>;
+      const action = ce.detail?.action;
+      if (action === "start" || action === "resume") {
+        if (remaining > 0) {
+          setIsActive(true);
+          flashAction(action === "start" ? "Start" : "Resume");
+        }
+      } else if (action === "pause") {
+        setIsActive(false);
+        flashAction("Pause");
+      }
+    };
+    window.addEventListener("voice-interface:timer-command", handle);
+    return () =>
+      window.removeEventListener("voice-interface:timer-command", handle);
+  }, [remaining, flashAction]);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+    };
+  }, []);
+
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
   const level: PaceLevel =
@@ -302,6 +395,9 @@ function useCountdown(totalSeconds: number) {
     pct: remaining / totalSeconds,
     remaining,
     level,
+    isActive,
+    actionLabel,
+    focusVisible,
   };
 }
 
@@ -312,59 +408,100 @@ const PACE_COLOR: Record<PaceLevel, string> = {
 };
 
 function TopHUD() {
-  const { label, pct, level } = useCountdown(TIMER_TOTAL_SECONDS);
+  const { label, pct, level, isActive, actionLabel, focusVisible, remaining } =
+    useCountdown(TIMER_TOTAL_SECONDS);
   const pulsing = level !== "ok";
   const pulseDuration = level === "danger" ? 0.7 : 1.4;
+  const notStarted = remaining === TIMER_TOTAL_SECONDS && !isActive;
 
   return (
-    <div className="fixed top-0 inset-x-0 z-40 pointer-events-none">
-      <div className="grid grid-cols-3 items-start px-10 pt-6">
-        {/* LEFT - title */}
-        <div className="kn-mono text-[13px] text-kn-fg tracking-[0.32em] font-bold pt-1">
-          VOICE FIRST WEB APPS
-        </div>
-
-        {/* CENTER - timer + depleting bar */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-3 text-kn-fg">
-            <TimerIcon />
-            <div className="kn-mono text-[14px] tracking-[0.22em] font-bold tabular-nums">
-              {label}
-            </div>
+    <>
+      <div className="fixed top-0 inset-x-0 z-40 pointer-events-none">
+        <div className="grid grid-cols-3 items-start px-10 pt-6">
+          {/* LEFT - title */}
+          <div className="kn-mono text-[13px] text-kn-fg tracking-[0.32em] font-bold pt-1">
+            VOICE FIRST WEB APPS
           </div>
-          <motion.div
-            className="rounded-full overflow-hidden"
-            style={{ background: "oklch(0.65 0.05 260 / 0.18)" }}
-            animate={{
-              width: level === "danger" ? 260 : 220,
-              height: level === "danger" ? 5 : 3,
-            }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          >
-            <motion.div
-              className="h-full rounded-full"
-              animate={{
-                width: `${Math.max(0, Math.min(1, pct)) * 100}%`,
-                background: PACE_COLOR[level],
-                opacity: pulsing ? [1, 0.4, 1] : 1,
-              }}
-              transition={{
-                width: { duration: 0.5, ease: "linear" },
-                background: { duration: 0.4 },
-                opacity: pulsing
-                  ? { duration: pulseDuration, repeat: Infinity }
-                  : { duration: 0.4 },
-              }}
-            />
-          </motion.div>
-        </div>
 
-        {/* RIGHT - meetup */}
-        <div className="kn-mono text-[13px] text-kn-fg tracking-[0.32em] font-bold text-right pt-1">
-          JsLovers × MongoDB
+          {/* CENTER - timer + depleting bar */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-3 text-kn-fg">
+              <TimerIcon />
+              <div className="kn-mono text-[14px] tracking-[0.22em] font-bold tabular-nums">
+                {label}
+              </div>
+              {!isActive && !notStarted && (
+                <div className="kn-mono text-[10px] text-kn-fg/50 tracking-[0.32em]">
+                  PAUSED
+                </div>
+              )}
+            </div>
+            <motion.div
+              className="rounded-full overflow-hidden"
+              style={{ background: "oklch(0.65 0.05 260 / 0.18)" }}
+              animate={{
+                width: level === "danger" ? 260 : 220,
+                height: level === "danger" ? 5 : 3,
+              }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <motion.div
+                className="h-full rounded-full"
+                animate={{
+                  width: `${Math.max(0, Math.min(1, pct)) * 100}%`,
+                  background: PACE_COLOR[level],
+                  opacity: pulsing ? [1, 0.4, 1] : 1,
+                }}
+                transition={{
+                  width: { duration: 0.5, ease: "linear" },
+                  background: { duration: 0.4 },
+                  opacity: pulsing
+                    ? { duration: pulseDuration, repeat: Infinity }
+                    : { duration: 0.4 },
+                }}
+              />
+            </motion.div>
+          </div>
+
+          {/* RIGHT - meetup */}
+          <div className="kn-mono text-[13px] text-kn-fg tracking-[0.32em] font-bold text-right pt-1">
+            JsLovers × MongoDB
+          </div>
         </div>
       </div>
-    </div>
+
+      <AnimatePresence>
+        {focusVisible && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(6px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            transition={{ duration: 0.3 }}
+            className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center bg-black/20"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.7, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: -20 }}
+              transition={{
+                type: "spring",
+                stiffness: 180,
+                damping: 16,
+                mass: 0.8,
+              }}
+              className="rounded-[2rem] border border-white/10 bg-black/70 px-12 py-8 text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)] text-kn-fg"
+            >
+              <div className="mb-2 text-sm uppercase tracking-[0.35em] text-kn-fg/60">
+                {actionLabel}
+              </div>
+              <div className="text-8xl font-semibold tabular-nums kn-text-grad">
+                {label}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

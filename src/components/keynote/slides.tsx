@@ -965,7 +965,10 @@ function DemoSlide() {
           </h1>
         </Reveal>
         <Reveal at={0} delay={0.4}>
-          <div className="mt-16 kn-glass kn-glow-cyan inline-flex items-center gap-8 px-12 py-8">
+          <a
+            href="/demo-dictation"
+            className="mt-16 kn-glass kn-glow-cyan inline-flex items-center gap-8 px-12 py-8 cursor-pointer hover:scale-[1.02] transition-transform"
+          >
             <motion.div
               className="w-6 h-6 rounded-full"
               style={{ background: "var(--kn-cyan)" }}
@@ -976,7 +979,7 @@ function DemoSlide() {
             <div className="kn-mono text-[14px] text-kn-fg/50">
               open voice demo →
             </div>
-          </div>
+          </a>
         </Reveal>
       </div>
     </div>
