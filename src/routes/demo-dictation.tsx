@@ -340,7 +340,7 @@ function DictationPage() {
     );
 
     try {
-      const res = await fetch("/demo-dictation/api", {
+      const res = await fetch("/api/demo-dictation", {
         method: "POST",
         body: formData,
       });

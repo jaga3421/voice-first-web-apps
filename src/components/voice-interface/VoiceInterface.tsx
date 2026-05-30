@@ -592,8 +592,92 @@ export default function VoiceInterface() {
     }
   }, [isEnabled]);
 
+  /* ----- live mic level for the waveform ----- */
+  const NUM_BARS = 7;
+  const [barLevels, setBarLevels] = useState<number[]>(() =>
+    new Array(NUM_BARS).fill(0)
+  );
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const analyserRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isEnabled) {
+      setBarLevels(new Array(NUM_BARS).fill(0));
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        micStreamRef.current = stream;
+
+        const ctx = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
+        audioCtxRef.current = ctx;
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 64;
+        analyser.smoothingTimeConstant = 0.55;
+        source.connect(analyser);
+
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        // pick spread-out frequency bins, skipping the very lowest (DC noise)
+        const bandIndexes = [2, 4, 6, 9, 13, 18, 24];
+        const smoothed = new Array(NUM_BARS).fill(0);
+
+        const tick = () => {
+          if (cancelled) return;
+          analyser.getByteFrequencyData(freqData);
+
+          for (let i = 0; i < NUM_BARS; i++) {
+            const bin = bandIndexes[i] ?? 0;
+            const raw = (freqData[bin] || 0) / 255;
+            // gate: ignore very low ambient noise so bars rest at 0
+            const gated = raw < 0.06 ? 0 : raw;
+            // exponential smoothing - fast attack, slower decay
+            const target = gated;
+            const prev = smoothed[i];
+            const k = target > prev ? 0.55 : 0.18;
+            smoothed[i] = prev + (target - prev) * k;
+          }
+
+          setBarLevels([...smoothed]);
+          analyserRafRef.current = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch (err) {
+        console.warn("Mic level capture failed:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (analyserRafRef.current) {
+        cancelAnimationFrame(analyserRafRef.current);
+        analyserRafRef.current = null;
+      }
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach((t) => t.stop());
+        micStreamRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+      setBarLevels(new Array(NUM_BARS).fill(0));
+    };
+  }, [isEnabled]);
+
   const active = isEnabled && isListening;
-  const speaking = indicatorStatus === "transcribing";
   const error = indicatorStatus === "error";
 
   const barColor = error
@@ -610,34 +694,22 @@ export default function VoiceInterface() {
       aria-label="Toggle voice interface"
       aria-pressed={isEnabled}
       onClick={() => setIsEnabled((prev) => !prev)}
-      className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[9999] flex h-6 items-end justify-center gap-[3px] px-3 cursor-pointer"
+      className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[9999] flex h-7 items-end justify-center gap-[3px] px-3 cursor-pointer"
     >
-      {baseHeights.map((h, i) => (
-        <motion.span
-          key={i}
-          className="w-[2px] rounded-full"
-          style={{ background: barColor, height: h }}
-          animate={
-            speaking
-              ? {
-                  height: [h, h * 1.6, h * 0.7, h],
-                  opacity: [0.85, 1, 0.7, 0.85],
-                }
-              : active
-                ? {
-                    height: [h, h * 1.15, h],
-                    opacity: [0.7, 0.9, 0.7],
-                  }
-                : { height: h, opacity: 0.6 }
-          }
-          transition={{
-            duration: speaking ? 0.9 : 2.4,
-            repeat: active ? Infinity : 0,
-            ease: "easeInOut",
-            delay: i * 0.05,
-          }}
-        />
-      ))}
+      {baseHeights.map((h, i) => {
+        const level = barLevels[i] ?? 0;
+        const targetHeight = active ? h + level * 24 : h;
+        const targetOpacity = active ? 0.55 + level * 0.45 : 0.55;
+        return (
+          <motion.span
+            key={i}
+            className="w-[2px] rounded-full"
+            style={{ background: barColor }}
+            animate={{ height: targetHeight, opacity: targetOpacity }}
+            transition={{ duration: 0.07, ease: "linear" }}
+          />
+        );
+      })}
     </button>
   );
 }
