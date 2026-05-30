@@ -1,31 +1,41 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-const GIF_SRC = "/penny-specs.gif";
-const VISIBLE_MS = 6000;
+const GIFS: Record<string, string> = {
+  penny: "/penny-specs.gif",
+  "iron-man": "/iron-man.gif",
+};
+
+const DEFAULT_GIF = "penny";
+const VISIBLE_MS = 5000;
 
 export default function GifOverlay() {
-  const [visible, setVisible] = useState(false);
+  const [currentGif, setCurrentGif] = useState<string | null>(null);
 
-  // Preload the gif so it pops instantly when triggered.
+  // Preload all gifs so they pop instantly when triggered.
   useEffect(() => {
-    const img = new Image();
-    img.src = GIF_SRC;
+    Object.values(GIFS).forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
   }, []);
 
   useEffect(() => {
     let hideTimer: number | null = null;
 
-    const show = () => {
-      setVisible(true);
+    const show = (event: Event) => {
+      const ce = event as CustomEvent<{ gif?: string }>;
+      const requested = ce.detail?.gif ?? DEFAULT_GIF;
+      const src = GIFS[requested] ?? GIFS[DEFAULT_GIF];
+      setCurrentGif(src);
       if (hideTimer) clearTimeout(hideTimer);
       hideTimer = window.setTimeout(() => {
-        setVisible(false);
+        setCurrentGif(null);
       }, VISIBLE_MS);
     };
 
     const dismiss = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setVisible(false);
+      if (e.key === "Escape") setCurrentGif(null);
     };
 
     window.addEventListener("voice-interface:gif-overlay", show);
@@ -40,17 +50,18 @@ export default function GifOverlay() {
 
   return (
     <AnimatePresence>
-      {visible && (
+      {currentGif && (
         <motion.div
+          key={currentGif}
           className="fixed inset-0 z-[9996] flex items-center justify-center bg-black/40 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          onClick={() => setVisible(false)}
+          onClick={() => setCurrentGif(null)}
         >
           <motion.img
-            src={GIF_SRC}
+            src={currentGif}
             alt=""
             className="rounded-2xl shadow-2xl"
             style={{ width: "80%", height: "auto" }}

@@ -64,8 +64,10 @@ const dispatchCelebration = () => {
   window.dispatchEvent(new CustomEvent("voice-interface:celebrate"));
 };
 
-const dispatchGifOverlay = () => {
-  window.dispatchEvent(new CustomEvent("voice-interface:gif-overlay"));
+const dispatchGifOverlay = (gif: string) => {
+  window.dispatchEvent(
+    new CustomEvent("voice-interface:gif-overlay", { detail: { gif } })
+  );
 };
 
 const dispatchSubtitleVisibility = (visible: boolean) => {
@@ -200,7 +202,28 @@ const executeVoiceCommand = (
     normalizedText.includes("molly cule") ||
     normalizedText.includes("molly cules")
   ) {
-    dispatchGifOverlay();
+    dispatchGifOverlay("penny");
+    return true;
+  }
+
+  if (
+    normalizedText.includes("iron man") ||
+    normalizedText.includes("ironman") ||
+    normalizedText.includes("ironmen") ||
+    normalizedText.includes("iran man") ||
+    normalizedText.includes("vibe coder") ||
+    normalizedText.includes("vibecoder") ||
+    normalizedText.includes("vibe coders") ||
+    normalizedText.includes("wibecoder") ||
+    normalizedText.includes("wibe coder") ||
+    normalizedText.includes("wicoder") ||
+    normalizedText.includes("why coder") ||
+    normalizedText.includes("vibcoder") ||
+    normalizedText.includes("vibe code") ||
+    normalizedText.includes("vibecode") ||
+    normalizedText.includes("vive coder")
+  ) {
+    dispatchGifOverlay("iron-man");
     return true;
   }
 
