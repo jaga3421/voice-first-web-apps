@@ -186,7 +186,10 @@ const executeVoiceCommand = (
     return true;
   }
 
-  if (normalizedText.includes("agenda")) {
+  if (
+    normalizedText.includes("agenda") ||
+    normalizedText.includes("ajanta")
+  ) {
     dispatchDeckGoId("agenda");
     return true;
   }
