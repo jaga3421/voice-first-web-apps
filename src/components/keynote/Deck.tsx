@@ -10,6 +10,7 @@ import { slides, StepContext } from "./slides";
 import VoiceInterface from "../voice-interface/VoiceInterface";
 import VoiceSubtitleBar from "../voice-interface/VoiceSubtitleBar";
 import VoiceCelebration from "../voice-interface/VoiceCelebration";
+import GifOverlay from "../voice-interface/GifOverlay";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TIMER_TOTAL_SECONDS = 25 * 60;
@@ -212,6 +213,7 @@ export function Deck() {
       <VoiceInterface />
       <VoiceSubtitleBar />
       <VoiceCelebration />
+      <GifOverlay />
 
       <AnimatePresence>
         {gridOpen && (

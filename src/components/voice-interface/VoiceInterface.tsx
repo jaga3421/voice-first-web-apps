@@ -64,6 +64,10 @@ const dispatchCelebration = () => {
   window.dispatchEvent(new CustomEvent("voice-interface:celebrate"));
 };
 
+const dispatchGifOverlay = () => {
+  window.dispatchEvent(new CustomEvent("voice-interface:gif-overlay"));
+};
+
 const dispatchSubtitleVisibility = (visible: boolean) => {
   window.dispatchEvent(
     new CustomEvent("voice-interface:subtitle-visibility", {
@@ -187,6 +191,20 @@ const executeVoiceCommand = (
   }
 
   if (
+    normalizedText.includes("molecules") ||
+    normalizedText.includes("molecule") ||
+    normalizedText.includes("molicule") ||
+    normalizedText.includes("moliculs") ||
+    normalizedText.includes("moliculus") ||
+    normalizedText.includes("malicule") ||
+    normalizedText.includes("molly cule") ||
+    normalizedText.includes("molly cules")
+  ) {
+    dispatchGifOverlay();
+    return true;
+  }
+
+  if (
     normalizedText.includes("agenda") ||
     normalizedText.includes("ajanta")
   ) {
@@ -304,6 +322,13 @@ export default function VoiceInterface() {
   const enabledRef = useRef(false);
   const indicatorStatusRef = useRef<IndicatorStatus>("idle");
   const ignoreSpeechUntilRef = useRef(0);
+
+  // Recovery state: one auto-retry per page load.
+  // Refresh resets the ref so the user gets a fresh attempt.
+  const autoRetryUsedRef = useRef(false);
+  const [recreateNonce, setRecreateNonce] = useState(0);
+  const silentFailTimerRef = useRef<number | null>(null);
+  const retryTimerRef = useRef<number | null>(null);
 
   const updateIndicatorStatus = (
     nextStatus: IndicatorStatus,
@@ -535,9 +560,13 @@ export default function VoiceInterface() {
         clearTimeout(postMatchIgnoreTimerRef.current);
       }
 
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch {
+        // ignore
+      }
     };
-  }, []);
+  }, [recreateNonce]);
 
   useEffect(() => {
     const recognition = recognitionRef.current;
@@ -593,7 +622,71 @@ export default function VoiceInterface() {
     } catch (error) {
       console.warn("Voice interface stop failed:", error);
     }
-  }, [isEnabled]);
+  }, [isEnabled, recreateNonce]);
+
+  /* ----- error detection + one-shot auto-recovery ----- */
+  useEffect(() => {
+    // Clear any pending silent-fail timer when state changes.
+    if (silentFailTimerRef.current) {
+      clearTimeout(silentFailTimerRef.current);
+      silentFailTimerRef.current = null;
+    }
+
+    // Watch for silent failure: enabled but not listening for too long.
+    if (isEnabled && !isListening && indicatorStatus !== "error") {
+      silentFailTimerRef.current = window.setTimeout(() => {
+        if (
+          enabledRef.current &&
+          indicatorStatusRef.current !== "listening" &&
+          indicatorStatusRef.current !== "transcribing" &&
+          indicatorStatusRef.current !== "matched"
+        ) {
+          console.warn(
+            "Voice interface appears stuck (enabled but not listening). Marking error."
+          );
+          updateIndicatorStatus("error", { force: true });
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (silentFailTimerRef.current) {
+        clearTimeout(silentFailTimerRef.current);
+        silentFailTimerRef.current = null;
+      }
+    };
+  }, [isEnabled, isListening, indicatorStatus]);
+
+  useEffect(() => {
+    // When error state is hit, attempt exactly one recovery per page load.
+    if (indicatorStatus !== "error") return;
+    if (!isEnabled) return;
+    if (autoRetryUsedRef.current) return;
+
+    autoRetryUsedRef.current = true;
+
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+    }
+    retryTimerRef.current = window.setTimeout(() => {
+      console.warn("Voice interface auto-recovery: recreating recognition.");
+      // Reset transcripts/state and bump nonce to remount the recognition.
+      transcriptRef.current = "";
+      fullTranscriptRef.current = "";
+      currentTranscriptSnapshotRef.current = "";
+      lastConsumedTranscriptRef.current = "";
+      ignoreSpeechUntilRef.current = 0;
+      updateIndicatorStatus("enabled", { force: true });
+      setRecreateNonce((n) => n + 1);
+    }, 800);
+
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+  }, [indicatorStatus, isEnabled]);
 
   /* ----- live mic level for the waveform ----- */
   const NUM_BARS = 7;
