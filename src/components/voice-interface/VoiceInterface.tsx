@@ -191,30 +191,6 @@ const executeVoiceCommand = (
     return true;
   }
 
-  if (
-    normalizedText.includes("full screen") ||
-    normalizedText.includes("fullscreen") ||
-    normalizedText.includes("go full screen") ||
-    normalizedText.includes("enter full screen")
-  ) {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    }
-    return true;
-  }
-
-  if (
-    normalizedText.includes("exit full screen") ||
-    normalizedText.includes("exit fullscreen") ||
-    normalizedText.includes("leave full screen") ||
-    normalizedText.includes("leave fullscreen")
-  ) {
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.().catch(() => {});
-    }
-    return true;
-  }
-
   const requestedSlideNumber = extractSlideNumber(normalizedText);
   if (requestedSlideNumber) {
     dispatchDeckGoIndex(requestedSlideNumber - 1);
