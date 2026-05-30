@@ -17,7 +17,6 @@ const SILENCE_GAP_MS = 500;
 const SILENCE_RMS_THRESHOLD = 0.02;
 const MIN_SPEECH_FRAMES = 6;
 const MIN_AUDIO_BLOB_BYTES = 1200;
-const MIN_BROWSER_TRANSCRIPT_DELTA_CHARS = 8;
 
 type Command = {
   id: string;
@@ -67,19 +66,6 @@ const COMMANDS: Command[] = [
 
 const normalizeTranscript = (text: string) =>
   text.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
-
-const hasMeaningfulBrowserTranscriptDelta = (
-  beforeText: string,
-  afterText: string
-) => {
-  const before = normalizeTranscript(beforeText);
-  const after = normalizeTranscript(afterText);
-  if (!after || after === before || after.length < before.length) {
-    return false;
-  }
-  const delta = after.slice(before.length).replace(/\s+/g, "");
-  return delta.length >= MIN_BROWSER_TRANSCRIPT_DELTA_CHARS;
-};
 
 const mergeTranscriptSegment = (existingText: string, incomingText: string) => {
   const prev = existingText.replace(/\s+/g, " ").trim();
@@ -147,7 +133,6 @@ function DictationPage() {
   const speechFrameCountRef = useRef(0);
   const browserTranscriptRef = useRef("");
   const browserFinalTranscriptRef = useRef("");
-  const segmentBrowserTranscriptSnapshotRef = useRef("");
   const recognitionRestartTimerRef = useRef<number | null>(null);
   const recognitionActiveRef = useRef(false);
   const activeCommandTimerRef = useRef<number | null>(null);
@@ -369,7 +354,6 @@ function DictationPage() {
       setBrowserTranscript("");
       browserTranscriptRef.current = "";
       browserFinalTranscriptRef.current = "";
-      segmentBrowserTranscriptSnapshotRef.current = "";
 
       if (data.matchedCommandId) {
         const matchedCommand = COMMANDS.find(
@@ -401,7 +385,6 @@ function DictationPage() {
     heardSpeechRef.current = false;
     speechFrameCountRef.current = 0;
     setIsHearingSpeech(false);
-    segmentBrowserTranscriptSnapshotRef.current = browserTranscriptRef.current;
 
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
@@ -415,10 +398,6 @@ function DictationPage() {
       const speechFrameCount = speechFrameCountRef.current;
       const shouldRestart = isRecordingRef.current && stream.active;
       const mimeType = recorder.mimeType || "audio/webm";
-      const browserTranscriptChanged = hasMeaningfulBrowserTranscriptDelta(
-        segmentBrowserTranscriptSnapshotRef.current,
-        browserTranscriptRef.current
-      );
 
       audioChunksRef.current = [];
       heardSpeechRef.current = false;
@@ -436,7 +415,6 @@ function DictationPage() {
         useAIRef.current &&
         hadSpeech &&
         speechFrameCount >= MIN_SPEECH_FRAMES &&
-        browserTranscriptChanged &&
         chunks.length > 0
       ) {
         const audioBlob = new Blob(chunks, { type: mimeType });
@@ -690,7 +668,6 @@ function DictationPage() {
                 setBrowserTranscript("");
                 browserTranscriptRef.current = "";
                 browserFinalTranscriptRef.current = "";
-                segmentBrowserTranscriptSnapshotRef.current = "";
               }}
               className={`flex h-16 w-16 items-center justify-center rounded-full border transition-colors ${
                 useAI
