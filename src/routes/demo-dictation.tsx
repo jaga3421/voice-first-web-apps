@@ -18,6 +18,7 @@ const SILENCE_RMS_THRESHOLD = 0.02;
 const MIN_SPEECH_FRAMES = 6;
 const MIN_AUDIO_BLOB_BYTES = 1200;
 const MIN_BROWSER_TRANSCRIPT_CHARS = 2;
+const COMMAND_REPEAT_GUARD_MS = 4000;
 
 type Command = {
   id: string;
@@ -145,6 +146,8 @@ function DictationPage() {
   const executedCommandsPanelRef = useRef<HTMLDivElement | null>(null);
   const executionHighlightTimerRef = useRef<number | null>(null);
   const aiTranscriptRef = useRef("");
+  const lastCommandIdRef = useRef<string | null>(null);
+  const lastCommandAtRef = useRef(0);
 
   useEffect(() => {
     useAIRef.current = useAI;
@@ -160,6 +163,19 @@ function DictationPage() {
     source: string,
     reason = ""
   ) => {
+    // Guard against the same intent firing back-to-back. Whisper is primed with
+    // the running transcript, so on near-silent chunks it tends to re-emit the
+    // last command phrase, which the intent matcher then matches again. Skip a
+    // repeat of the same command inside a short window (a deliberate repeat after
+    // the gap still goes through, and a different command resets immediately).
+    const now = Date.now();
+    const isRepeat =
+      lastCommandIdRef.current === command.id &&
+      now - lastCommandAtRef.current < COMMAND_REPEAT_GUARD_MS;
+    lastCommandIdRef.current = command.id;
+    lastCommandAtRef.current = now;
+    if (isRepeat) return;
+
     setActiveCommandId(command.id);
     if (activeCommandTimerRef.current) {
       clearTimeout(activeCommandTimerRef.current);
