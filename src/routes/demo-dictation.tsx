@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   FaArrowLeft,
   FaMicrophone,
@@ -131,6 +131,8 @@ function DictationPage() {
   const [highlightedExecutionId, setHighlightedExecutionId] = useState<
     string | null
   >(null);
+  const [isHearingSpeech, setIsHearingSpeech] = useState(false);
+  const [recentMatchLabel, setRecentMatchLabel] = useState<string | null>(null);
 
   const isRecordingRef = useRef(false);
   const useAIRef = useRef(false);
@@ -199,6 +201,13 @@ function DictationPage() {
     executionHighlightTimerRef.current = window.setTimeout(() => {
       setHighlightedExecutionId(null);
     }, 2200);
+
+    setRecentMatchLabel(command.label);
+    window.setTimeout(() => {
+      setRecentMatchLabel((current) =>
+        current === command.label ? null : current
+      );
+    }, 1800);
   };
 
   useEffect(() => {
@@ -391,6 +400,7 @@ function DictationPage() {
     audioChunksRef.current = [];
     heardSpeechRef.current = false;
     speechFrameCountRef.current = 0;
+    setIsHearingSpeech(false);
     segmentBrowserTranscriptSnapshotRef.current = browserTranscriptRef.current;
 
     recorder.ondataavailable = (event) => {
@@ -475,10 +485,12 @@ function DictationPage() {
         speechFrameCountRef.current += 1;
         if (speechFrameCountRef.current >= MIN_SPEECH_FRAMES) {
           heardSpeechRef.current = true;
+          setIsHearingSpeech(true);
         }
       }
 
       if (rms < SILENCE_RMS_THRESHOLD && heardSpeechRef.current) {
+        setIsHearingSpeech(false);
         if (!silenceTimerRef.current) {
           silenceTimerRef.current = window.setTimeout(() => {
             flushCurrentSegment();
@@ -529,6 +541,8 @@ function DictationPage() {
   const stopRecording = () => {
     setIsRecording(false);
     isRecordingRef.current = false;
+    setIsHearingSpeech(false);
+    setRecentMatchLabel(null);
 
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -556,6 +570,41 @@ function DictationPage() {
     }
   };
 
+  type ToastTone = "neutral" | "info" | "ai" | "match";
+  const toast: { id: string; label: string; tone: ToastTone } | null = (() => {
+    if (!isRecording || !useAI) return null;
+    if (recentMatchLabel) {
+      return {
+        id: `match-${recentMatchLabel}`,
+        label: `Matched: ${recentMatchLabel}`,
+        tone: "match",
+      };
+    }
+    if (isTranscribing) {
+      return { id: "sending", label: "Sending to AI...", tone: "ai" };
+    }
+    if (isHearingSpeech) {
+      return { id: "listening", label: "Listening...", tone: "info" };
+    }
+    return { id: "waiting", label: "Waiting for speech...", tone: "neutral" };
+  })();
+
+  const toneClasses: Record<ToastTone, string> = {
+    neutral:
+      "border-gray-700 bg-[#1a1a1a]/95 text-gray-300",
+    info: "border-cyan-400/50 bg-cyan-500/10 text-cyan-200",
+    ai: "border-pink-400/55 bg-pink-500/15 text-pink-200",
+    match:
+      "border-emerald-400/60 bg-emerald-500/15 text-emerald-200",
+  };
+
+  const dotClasses: Record<ToastTone, string> = {
+    neutral: "bg-gray-500",
+    info: "bg-cyan-300",
+    ai: "bg-pink-300",
+    match: "bg-emerald-300",
+  };
+
   return (
     <div className="min-h-screen w-screen overflow-y-auto bg-[#0f0f0f] text-white p-6 font-sans">
       <Link
@@ -564,6 +613,36 @@ function DictationPage() {
       >
         <FaArrowLeft /> Exit Demo
       </Link>
+
+      <AnimatePresence mode="wait">
+        {toast && (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.97 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full border px-5 py-3 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.45)] ${toneClasses[toast.tone]}`}
+          >
+            <motion.span
+              className={`h-2 w-2 rounded-full ${dotClasses[toast.tone]}`}
+              animate={
+                toast.tone === "match"
+                  ? { scale: 1, opacity: 1 }
+                  : { scale: [1, 1.3, 1], opacity: [0.85, 1, 0.85] }
+              }
+              transition={
+                toast.tone === "match"
+                  ? { duration: 0.2 }
+                  : { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+              }
+            />
+            <span className="text-sm font-medium uppercase tracking-[0.18em]">
+              {toast.label}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-7xl mx-auto pt-16 pb-6 flex flex-col gap-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
