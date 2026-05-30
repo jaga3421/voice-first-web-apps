@@ -177,7 +177,9 @@ const executeVoiceCommand = (
     normalizedText.includes("hundred") ||
     normalizedText.includes("hundreth") ||
     normalizedText.includes("my demo") ||
-    normalizedText.includes("my demos")
+    normalizedText.includes("my demos") ||
+    normalizedText.includes("thanks") ||
+    normalizedText.includes("thank you")
   ) {
     dispatchCelebration();
     return true;
