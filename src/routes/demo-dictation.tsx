@@ -17,6 +17,7 @@ const SILENCE_GAP_MS = 500;
 const SILENCE_RMS_THRESHOLD = 0.02;
 const MIN_SPEECH_FRAMES = 6;
 const MIN_AUDIO_BLOB_BYTES = 1200;
+const MIN_BROWSER_TRANSCRIPT_CHARS = 2;
 
 type Command = {
   id: string;
@@ -66,6 +67,9 @@ const COMMANDS: Command[] = [
 
 const normalizeTranscript = (text: string) =>
   text.toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
+
+const hasTranscribedWord = (text: string) =>
+  normalizeTranscript(text).replace(/\s+/g, "").length >= MIN_BROWSER_TRANSCRIPT_CHARS;
 
 const mergeTranscriptSegment = (existingText: string, incomingText: string) => {
   const prev = existingText.replace(/\s+/g, " ").trim();
@@ -398,6 +402,7 @@ function DictationPage() {
       const speechFrameCount = speechFrameCountRef.current;
       const shouldRestart = isRecordingRef.current && stream.active;
       const mimeType = recorder.mimeType || "audio/webm";
+      const heardTranscribedWord = hasTranscribedWord(browserTranscriptRef.current);
 
       audioChunksRef.current = [];
       heardSpeechRef.current = false;
@@ -415,6 +420,7 @@ function DictationPage() {
         useAIRef.current &&
         hadSpeech &&
         speechFrameCount >= MIN_SPEECH_FRAMES &&
+        heardTranscribedWord &&
         chunks.length > 0
       ) {
         const audioBlob = new Blob(chunks, { type: mimeType });
