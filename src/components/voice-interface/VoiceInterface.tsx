@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 
 const PAUSE_AFTER_SPEECH_MS = 500;
 const POST_MATCH_IGNORE_MS = 2000;
+const SUBTITLE_CLEAR_AFTER_PAUSE_MS = 1200;
 
 const SPELLED_SLIDE_NUMBERS: Record<string, number> = {
   one: 1,
@@ -86,14 +87,6 @@ const dispatchSubtitleUpdate = (text: string) => {
   );
 };
 
-const dispatchSubtitleCommit = (text: string) => {
-  window.dispatchEvent(
-    new CustomEvent("voice-interface:subtitle-commit", {
-      detail: { text },
-    })
-  );
-};
-
 const dispatchSubtitleClear = () => {
   window.dispatchEvent(new CustomEvent("voice-interface:subtitle-clear"));
 };
@@ -122,7 +115,6 @@ const dispatchDeckGoId = (id: string) => {
   );
 };
 
-let subtitleBaselineTranscript = "";
 
 const extractSlideNumber = (normalizedText: string) => {
   const digitMatch =
@@ -161,7 +153,6 @@ const executeVoiceCommand = (
     normalizedText === "show subtitle" ||
     normalizedText === "show subtitles"
   ) {
-    subtitleBaselineTranscript = currentTranscript.trim();
     dispatchSubtitleClear();
     dispatchSubtitleVisibility(true);
     return true;
@@ -345,6 +336,9 @@ export default function VoiceInterface() {
   const enabledRef = useRef(false);
   const indicatorStatusRef = useRef<IndicatorStatus>("idle");
   const ignoreSpeechUntilRef = useRef(0);
+  // Real-time subtitle state: only the current utterance is shown.
+  const utteranceFinalRef = useRef("");
+  const subtitleClearTimerRef = useRef<number | null>(null);
 
   // Recovery state: one auto-retry per page load.
   // Refresh resets the ref so the user gets a fresh attempt.
@@ -461,6 +455,7 @@ export default function VoiceInterface() {
         transcriptRef.current = "";
         currentTranscriptSnapshotRef.current = "";
         lastConsumedTranscriptRef.current = "";
+        utteranceFinalRef.current = "";
         dispatchSubtitleUpdate("");
         return;
       }
@@ -478,18 +473,28 @@ export default function VoiceInterface() {
         }
       }
 
+      // Accumulate finalized text only for the current utterance.
+      if (finalChunk) {
+        utteranceFinalRef.current += finalChunk;
+      }
+
+      // Any new audio frame cancels the pending subtitle-clear so a brief
+      // hesitation doesn't wipe the caption mid-thought.
+      if (subtitleClearTimerRef.current) {
+        clearTimeout(subtitleClearTimerRef.current);
+        subtitleClearTimerRef.current = null;
+      }
+
       const subtitleTranscript =
+        `${utteranceFinalRef.current}${interimTranscript}`.trim();
+      dispatchSubtitleUpdate(subtitleTranscript);
+
+      currentTranscriptSnapshotRef.current =
         `${fullTranscriptRef.current}${interimTranscript}`.trim();
-      currentTranscriptSnapshotRef.current = subtitleTranscript;
       transcriptRef.current = getTranscriptDelta(
         lastConsumedTranscriptRef.current,
         currentTranscriptSnapshotRef.current
       );
-      const subtitleFragment = getTranscriptDelta(
-        subtitleBaselineTranscript,
-        subtitleTranscript
-      );
-      dispatchSubtitleUpdate(subtitleFragment);
 
       if (transcriptRef.current || finalChunk.trim()) {
         updateIndicatorStatus("transcribing", { resetAfterMs: 1000 });
@@ -503,10 +508,6 @@ export default function VoiceInterface() {
         const pendingTranscript = transcriptRef.current.trim();
         const normalizedTranscript = normalizeTranscript(pendingTranscript);
 
-        if (pendingTranscript.trim()) {
-          dispatchSubtitleCommit(pendingTranscript);
-        }
-
         if (normalizedTranscript) {
           const executed = executeVoiceCommand(
             normalizedTranscript,
@@ -518,6 +519,7 @@ export default function VoiceInterface() {
             fullTranscriptRef.current = "";
             currentTranscriptSnapshotRef.current = "";
             lastConsumedTranscriptRef.current = "";
+            utteranceFinalRef.current = "";
             dispatchSubtitleUpdate("");
             updateIndicatorStatus("matched", { resetAfterMs: 1000 });
 
@@ -535,7 +537,17 @@ export default function VoiceInterface() {
 
         lastConsumedTranscriptRef.current = currentTranscriptSnapshotRef.current;
         transcriptRef.current = "";
-        dispatchSubtitleUpdate("");
+
+        // Hold the caption briefly so the audience can finish reading,
+        // then clear it so the next utterance starts on a clean canvas.
+        if (subtitleClearTimerRef.current) {
+          clearTimeout(subtitleClearTimerRef.current);
+        }
+        subtitleClearTimerRef.current = window.setTimeout(() => {
+          utteranceFinalRef.current = "";
+          dispatchSubtitleUpdate("");
+          subtitleClearTimerRef.current = null;
+        }, SUBTITLE_CLEAR_AFTER_PAUSE_MS);
       }, PAUSE_AFTER_SPEECH_MS);
     };
 
@@ -602,7 +614,11 @@ export default function VoiceInterface() {
       currentTranscriptSnapshotRef.current = "";
       lastConsumedTranscriptRef.current = "";
       ignoreSpeechUntilRef.current = 0;
-      subtitleBaselineTranscript = "";
+      utteranceFinalRef.current = "";
+      if (subtitleClearTimerRef.current) {
+        clearTimeout(subtitleClearTimerRef.current);
+        subtitleClearTimerRef.current = null;
+      }
       dispatchSubtitleUpdate("");
       updateIndicatorStatus("enabled", { force: true });
 
@@ -630,7 +646,11 @@ export default function VoiceInterface() {
     currentTranscriptSnapshotRef.current = "";
     lastConsumedTranscriptRef.current = "";
     ignoreSpeechUntilRef.current = 0;
-    subtitleBaselineTranscript = "";
+    utteranceFinalRef.current = "";
+    if (subtitleClearTimerRef.current) {
+      clearTimeout(subtitleClearTimerRef.current);
+      subtitleClearTimerRef.current = null;
+    }
     dispatchSubtitleClear();
     dispatchSubtitleVisibility(false);
 

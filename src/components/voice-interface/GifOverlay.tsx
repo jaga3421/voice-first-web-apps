@@ -7,7 +7,7 @@ const GIFS: Record<string, string> = {
 };
 
 const DEFAULT_GIF = "penny";
-const VISIBLE_MS = 5000;
+const VISIBLE_MS = 2000;
 
 export default function GifOverlay() {
   const [currentGif, setCurrentGif] = useState<string | null>(null);

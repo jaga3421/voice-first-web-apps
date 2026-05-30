@@ -1,139 +1,52 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useState } from "react";
 
-const MAX_SUBTITLE_PHRASES = 1;
+const normalize = (text: string) => text.replace(/\s+/g, " ").trim();
 
-const normalizeText = (text: string) => text.replace(/\s+/g, " ").trim();
+const trimForDisplay = (text: string) => {
+  const cleaned = normalize(text);
+  if (!cleaned) return "";
 
-const getSubtitleText = (phrases: string[], liveFragment: string) => {
-  const committedText = phrases.map(normalizeText).filter(Boolean).join(" ");
-  const currentText = normalizeText(liveFragment);
-  const combined = [committedText, currentText].filter(Boolean).join(" ").trim();
-
-  if (!combined) return "";
-
-  const sentences = combined
+  const sentences = cleaned
     .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 
   if (sentences.length >= 2) {
     return sentences.slice(-2).join(" ");
   }
 
-  const words = combined.split(" ");
+  const words = cleaned.split(" ");
   if (words.length > 24) {
     return words.slice(-24).join(" ");
   }
-
-  return combined;
+  return cleaned;
 };
-
-type State = {
-  isVisible: boolean;
-  subtitlePhrases: string[];
-  liveFragment: string;
-};
-
-type Action =
-  | { type: "set_visibility"; visible: boolean }
-  | { type: "update_live"; text: string }
-  | { type: "commit_phrase"; text: string }
-  | { type: "reset_text" };
-
-const initialState: State = {
-  isVisible: false,
-  subtitlePhrases: [],
-  liveFragment: "",
-};
-
-function subtitleReducer(state: State, action: Action): State {
-  switch (action.type) {
-    case "set_visibility":
-      return {
-        ...state,
-        isVisible: action.visible,
-        subtitlePhrases: [],
-        liveFragment: "",
-      };
-    case "update_live":
-      if (!state.isVisible) {
-        return state;
-      }
-      return {
-        ...state,
-        liveFragment: action.text,
-      };
-    case "commit_phrase":
-      if (!state.isVisible) {
-        return state;
-      }
-      if (!action.text) {
-        return {
-          ...state,
-          liveFragment: "",
-        };
-      }
-      return {
-        ...state,
-        subtitlePhrases: [...state.subtitlePhrases, action.text].slice(
-          -MAX_SUBTITLE_PHRASES
-        ),
-        liveFragment: "",
-      };
-    case "reset_text":
-      return {
-        ...state,
-        subtitlePhrases: [],
-        liveFragment: "",
-      };
-    default:
-      return state;
-  }
-}
 
 export default function VoiceSubtitleBar() {
-  const [state, dispatch] = useReducer(subtitleReducer, initialState);
+  const [isVisible, setIsVisible] = useState(false);
+  const [text, setText] = useState("");
 
   useEffect(() => {
     const handleVisibility = (event: Event) => {
       const ce = event as CustomEvent<{ visible?: boolean }>;
-      dispatch({
-        type: "set_visibility",
-        visible: Boolean(ce.detail?.visible),
-      });
+      const visible = Boolean(ce.detail?.visible);
+      setIsVisible(visible);
+      if (!visible) setText("");
     };
 
-    const handleFragmentUpdate = (event: Event) => {
+    const handleFragment = (event: Event) => {
       const ce = event as CustomEvent<{ text?: string }>;
-      dispatch({
-        type: "update_live",
-        text: ce.detail?.text || "",
-      });
+      setText(ce.detail?.text || "");
     };
 
-    const handleCommit = (event: Event) => {
-      const ce = event as CustomEvent<{ text?: string }>;
-      const phrase = normalizeText(ce.detail?.text || "");
-      dispatch({
-        type: "commit_phrase",
-        text: phrase,
-      });
-    };
-
-    const handleReset = () => {
-      dispatch({ type: "reset_text" });
-    };
+    const handleClear = () => setText("");
 
     window.addEventListener(
       "voice-interface:subtitle-visibility",
       handleVisibility
     );
-    window.addEventListener(
-      "voice-interface:subtitle-fragment",
-      handleFragmentUpdate
-    );
-    window.addEventListener("voice-interface:subtitle-commit", handleCommit);
-    window.addEventListener("voice-interface:subtitle-clear", handleReset);
+    window.addEventListener("voice-interface:subtitle-fragment", handleFragment);
+    window.addEventListener("voice-interface:subtitle-clear", handleClear);
 
     return () => {
       window.removeEventListener(
@@ -142,28 +55,29 @@ export default function VoiceSubtitleBar() {
       );
       window.removeEventListener(
         "voice-interface:subtitle-fragment",
-        handleFragmentUpdate
+        handleFragment
       );
-      window.removeEventListener("voice-interface:subtitle-commit", handleCommit);
-      window.removeEventListener("voice-interface:subtitle-clear", handleReset);
+      window.removeEventListener("voice-interface:subtitle-clear", handleClear);
     };
   }, []);
 
-  if (!state.isVisible) return null;
+  if (!isVisible) return null;
+
+  const display = trimForDisplay(text);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[9997] flex justify-center px-8 pb-6">
-      <div className="max-w-5xl rounded-2xl bg-black/75 px-6 py-4 text-center text-3xl font-medium leading-tight text-white shadow-2xl backdrop-blur-md">
+      <div className="max-w-5xl rounded-2xl bg-black/75 px-[34px] py-[26px] text-center text-[35px] font-medium leading-tight text-white shadow-2xl backdrop-blur-md">
         <div
           style={{
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
+            minHeight: "1.2em",
           }}
         >
-          {getSubtitleText(state.subtitlePhrases, state.liveFragment) ||
-            "Listening..."}
+          {display || "Listening..."}
         </div>
       </div>
     </div>

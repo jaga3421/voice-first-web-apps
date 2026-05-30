@@ -172,13 +172,16 @@ function CoverSlide() {
 
           <Reveal at={0} delay={0.8}>
             <div className="text-right">
-              <div className="kn-mono text-[12px] text-kn-fg/40 mb-3">
+              <div className="kn-mono text-[12px] text-kn-fg/40 mb-4">
                 Find me
               </div>
-              <div className="space-y-1 text-[20px] text-kn-fg/80 font-mono">
-                <div>linkedin.com/in/jjayy</div>
-                <div>github.com/jaga3421</div>
-                <div>jagadeesh-j.vercel.app</div>
+              <div className="kn-glass p-3 inline-block">
+                <img
+                  src="/QR.png"
+                  alt="QR code linking to speaker profile"
+                  className="block"
+                  style={{ width: 220, height: 220 }}
+                />
               </div>
             </div>
           </Reveal>
@@ -1262,57 +1265,54 @@ function QaThanksSlide() {
           <Kicker>12 · Over to you</Kicker>
         </Reveal>
 
-        <div className="flex-1 flex flex-col items-center justify-center -mt-8">
-          <Reveal at={0} delay={0.15}>
-            <h1 className="kn-display text-[280px] leading-[0.95] text-center">
-              <span className="kn-text-grad">Q&A</span>{" "}
-              <span className="text-kn-fg/30 font-light">&</span>{" "}
-              <span className="text-kn-fg">Thanks</span>
-            </h1>
-          </Reveal>
+        <div className="flex-1 grid grid-cols-2 gap-16 items-center -mt-8">
+          {/* LEFT - heading + speaker */}
+          <div className="flex flex-col">
+            <Reveal at={0} delay={0.15}>
+              <h1 className="kn-display text-[180px] leading-[0.95] text-left">
+                <span className="kn-text-grad">Q&A</span>
+                <br />
+                <span className="text-kn-fg/30 font-light">&</span>{" "}
+                <span className="text-kn-fg">Thanks</span>
+              </h1>
+            </Reveal>
 
-          <Reveal at={0} delay={0.5}>
-            <div className="kn-mono text-[18px] text-kn-fg/50 mt-10 tracking-[0.5em]">
-              ASK · ME · ANYTHING
+            <Reveal at={0} delay={0.5}>
+              <div className="kn-mono text-[18px] text-kn-fg/50 mt-10 tracking-[0.5em]">
+                ASK · ME · ANYTHING
+              </div>
+            </Reveal>
+
+            <Reveal at={0} delay={0.7}>
+              <div className="mt-14">
+                <div className="kn-mono text-[12px] text-kn-fg/40">Speaker</div>
+                <div className="kn-display text-[42px] mt-2 font-bold">
+                  Jagadeesh Jayachandran
+                </div>
+                <div className="text-[22px] text-kn-fg/65 mt-2">
+                  Front End Developer · Turing.com
+                </div>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* RIGHT - centred QR */}
+          <Reveal at={0} delay={0.3}>
+            <div className="flex flex-col items-center justify-center">
+              <div className="kn-glass p-8 inline-block">
+                <img
+                  src="/QR.png"
+                  alt="QR code linking to speaker profile"
+                  className="block"
+                  style={{ width: 520, height: 520 }}
+                />
+              </div>
+              <div className="kn-mono text-[14px] text-kn-cyan mt-6 tracking-[0.4em]">
+                SCAN · TO · CONNECT
+              </div>
             </div>
           </Reveal>
         </div>
-
-        <Reveal at={0} delay={0.75}>
-          <div className="kn-glass mt-8 p-8 flex items-center justify-between gap-10">
-            <div className="flex-none">
-              <div className="kn-mono text-[12px] text-kn-fg/40">Speaker</div>
-              <div className="kn-display text-[34px] mt-1 font-bold">
-                Jagadeesh Jayachandran
-              </div>
-              <div className="text-[18px] text-kn-fg/65 mt-1">
-                Front End Developer · Turing.com
-              </div>
-            </div>
-
-            <div className="flex-1 grid grid-cols-4 gap-4">
-              {[
-                ["LinkedIn", "/in/jjayy", "https://www.linkedin.com/in/jjayy"],
-                ["GitHub", "/jaga3421", "https://www.github.com/jaga3421"],
-                ["Website", "jagadeesh-j.vercel.app", "https://jagadeesh-j.vercel.app"],
-                ["Email", "jagadeesh.jkp@gmail.com", "mailto:jagadeesh.jkp@gmail.com"],
-              ].map(([label, value, href]) => (
-                <a
-                  key={label as string}
-                  className="kn-glass p-4 hover:kn-glow-cyan transition-shadow block"
-                  href={href as string}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <div className="kn-mono text-[11px] text-kn-cyan">{label}</div>
-                  <div className="text-[14px] mt-1 font-mono text-kn-fg/85 break-all">
-                    {value}
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        </Reveal>
       </div>
     </div>
   );
