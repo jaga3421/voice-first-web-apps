@@ -200,8 +200,15 @@ const executeVoiceCommand = (
   if (
     normalizedText.includes("next slide") ||
     normalizedText === "next" ||
+    normalizedText.endsWith(" next") ||
+    normalizedText.startsWith("next ") ||
     normalizedText.includes("go next") ||
     normalizedText.includes("go to next") ||
+    normalizedText.includes("go to the next") ||
+    normalizedText.includes("to the next") ||
+    normalizedText.includes("move next") ||
+    normalizedText.includes("move to next") ||
+    normalizedText.includes("move forward") ||
     normalizedText.includes("scroll down")
   ) {
     dispatchDeckAdvance();
@@ -211,8 +218,14 @@ const executeVoiceCommand = (
   if (
     normalizedText.includes("previous slide") ||
     normalizedText === "previous" ||
+    normalizedText.endsWith(" previous") ||
+    normalizedText.startsWith("previous ") ||
     normalizedText.includes("go back") ||
     normalizedText.includes("go to previous") ||
+    normalizedText.includes("go to the previous") ||
+    normalizedText.includes("to the previous") ||
+    normalizedText.includes("move previous") ||
+    normalizedText.includes("move back") ||
     normalizedText.includes("scroll up")
   ) {
     dispatchDeckRetreat();
