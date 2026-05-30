@@ -13,11 +13,44 @@ import VoiceCelebration from "../voice-interface/VoiceCelebration";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TIMER_TOTAL_SECONDS = 25 * 60;
+const POSITION_STORAGE_KEY = "voice-first:slide-position";
+
+type SavedPosition = { index: number; step: number };
+
+function readSavedPosition(): SavedPosition {
+  if (typeof window === "undefined") return { index: 0, step: 0 };
+  try {
+    const raw = window.localStorage.getItem(POSITION_STORAGE_KEY);
+    if (!raw) return { index: 0, step: 0 };
+    const parsed = JSON.parse(raw) as Partial<SavedPosition>;
+    const idx = Math.max(
+      0,
+      Math.min(slides.length - 1, Number(parsed.index) || 0)
+    );
+    const maxStep = (slides[idx]?.steps ?? 1) - 1;
+    const stp = Math.max(0, Math.min(maxStep, Number(parsed.step) || 0));
+    return { index: idx, step: stp };
+  } catch {
+    return { index: 0, step: 0 };
+  }
+}
 
 export function Deck() {
-  const [index, setIndex] = useState(0);
-  const [step, setStep] = useState(0);
+  const initial = readSavedPosition();
+  const [index, setIndex] = useState(initial.index);
+  const [step, setStep] = useState(initial.step);
   const [gridOpen, setGridOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        POSITION_STORAGE_KEY,
+        JSON.stringify({ index, step })
+      );
+    } catch {
+      // ignore quota / privacy mode errors
+    }
+  }, [index, step]);
 
   const slide = slides[index];
   const stepCount = slide?.steps ?? 1;
